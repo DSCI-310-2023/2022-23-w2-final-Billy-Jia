@@ -1,0 +1,126 @@
+---
+title: "Bevers"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+library(dplyr)
+library(purrr)
+library(ggplot2)
+
+knitr::opts_chunk$set(echo = TRUE)
+
+# this is a function we will use to recode the activ value in our data
+recode_activ <- function(activ_value) {
+  if (is.na(activ_value)) {
+    return(NA_character_)
+  } else if (activ_value == 1) {
+    return("active")
+  } else if (activ_value == 0) {
+    return("inactive")
+  } else {
+    stop("Unknown activ value")
+  }
+}
+
+```
+
+## Introduction
+
+Reynolds (1994) describes a small part of a study of the long-term temperature dynamics
+of beaver Castor canadensis in north-central Wisconsin.
+Body temperature was measured by telemetry every 10 minutes for four females,
+but data from a one period of less than a day for each of two animals is used there.
+
+The vast majority of the text and code are taken from the `beavers` data documentation page.
+
+```{r}
+# This code below is what's needed to process our dataset
+# the beaver datasets are builtin the R programming language
+# you do not need to do anything to use the dataset,
+# but we will be processing them
+
+bev1 <- beaver1 |>
+  dplyr::mutate(
+    bev_num = 1,
+    hours = time %/% 100 + 24*(day - day[1]) + (time %% 100)/60
+  )
+
+bev2 <- beaver2 |>
+  dplyr::mutate(
+    bev_num = 2,
+    hours = time %/% 100 + 24*(day - day[1]) + (time %% 100)/60
+  )
+
+bevs <- dplyr::bind_rows(bev1, bev2) |>
+  dplyr::mutate(
+    activ_char = purrr::map_chr(activ, recode_activ)
+  )
+
+# the bev data is what we will use for other parts of the analysis
+```
+
+## Data description
+
+In our processed data, we have combined data from the original `beaver1` and `beaver2`.
+The below table shows how many time observations for each beaver.
+
+```{r}
+# this table calculation should be loaded in the final report
+bev_num_counts <- bevs |>
+  dplyr::count(bev_num)
+```
+
+```{r}
+# this table should be displayed in the report
+bev_num_counts |>
+  knitr::kable()
+```
+
+The main columns of our data are as follows:
+
+- `day`: Day of observation (in days since the beginning of 1990), December 12–13 (beaver1) and November 3–4 (beaver2).
+- `time`: Time of observation, in the form `0330` for 3:30am
+- `temp`: Measured body temperature in degrees Celsius
+- `activ`: Indicator of activity outside the retreat
+
+Below we are counting the recoded `activ` column, `activ_char` by the `bev_num`
+
+```{r}
+# there is a table calculation here that ends up being displayed in the final report
+activ_char_counts <- bevs |>
+  dplyr::count(bev_num, activ_char)
+
+activ_char_counts |>
+  knitr::kable()
+```
+
+We also have a figure looking at temperatures of each beaver over time.
+The red points are when the beaver was active.
+
+```{r}
+# this is a figure that should be saved and loaded into the report
+g <- ggplot(bevs) +
+  geom_line(aes(x = hours, y = temp)) +
+  geom_point(
+    data = dplyr::filter(bevs, activ == 1),
+    aes(x = hours, y = temp),
+    color = "red"
+  ) +
+  geom_hline(yintercept = 37.5, color = "grey") +
+  facet_grid(~bev_num) +
+  ggtitle("Beaver Body Temperatures") +
+  theme_minimal()
+
+g
+```
+
+
+## References
+
+<!--
+You do not need to turn this into a bibliography + citation
+-->
+
+P. S. Reynolds (1994) Time-series analyses of beaver body temperatures. Chapter 11 of Lange, N., Ryan, L., Billard, L., Brillinger, D., Conquest, L. and Greenhouse, J. eds (1994) Case Studies in Biometry. New York: John Wiley and Sons.
