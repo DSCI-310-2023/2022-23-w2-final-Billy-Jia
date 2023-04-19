@@ -2,6 +2,8 @@ library(knitr)
 library(dplyr)
 library(purrr)
 library(ggplot2)
+library(devtools)
+load_all(".")
 knitr::opts_chunk$set(echo = TRUE)
 
 # This code below is what's needed to process our dataset
