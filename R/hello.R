@@ -9,7 +9,7 @@
 #'
 #' # this calls the function and should be working
 #' hello_dsci310_class()
-#'
+#' @export
 hello <- function() {
   print("Hello Folks!")
 }
